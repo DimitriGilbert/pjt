@@ -1,0 +1,152 @@
+<form id="pjt">
+<h2>pjt form</h2>
+<div class="form-group">
+	<label for="target" class="form-label">target</label>
+	<span class="input-help">pjt subcommand</span>
+	<select pa-type="pos" name="target" id="target" required class="form-select">
+
+		<option value="dummy">dummy</option>
+	</select>
+</div><button id="pjt_parse_btn">Parse</button>
+	<pre id="pjt_result" contenteditable=true ></pre>
+	<pre id="pjt_server_response"></pre>
+</form><div id="_subcommands">
+	<h3>Subcommand forms</h3>
+<div class="d-none subcmd-container-target" id="target_dummy_container"><form id="bin__dummy">
+<h2>dummy form</h2>
+<button id="bin__dummy_parse_btn">Parse</button>
+	<pre id="bin__dummy_result" contenteditable=true ></pre>
+	<pre id="bin__dummy_server_response"></pre>
+</form>
+<script type="text/javascript">
+	function bin__dummy_parse(__form) { 
+		let bin__dummy_frm = new FormData(__form);
+		let out = '';
+		for(const inp of bin__dummy_frm.keys()) {
+			const ielt = document.getElementById(inp);
+			switch(ielt.getAttribute('pa-type')) {
+				case 'pos':
+					if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(bin__dummy_frm.get(inp))) {
+						out+=' "'+bin__dummy_frm.get(inp)+'"';
+					} else {
+						out+=' '+bin__dummy_frm.get(inp);
+					}
+					break;
+				case 'opt':
+					if(bin__dummy_frm.get(inp) !== '') {
+						if (ielt.hasAttribute('pa-repeat')) {
+							for(const val of bin__dummy_frm.get(inp).split(`
+`)) {
+								out+=' --'+inp+' "'+val+'"';
+							}
+						} else {
+							out+=' --'+inp+' "'+bin__dummy_frm.get(inp)+'"';
+						}
+					}
+					break;
+				case 'flag':
+					if(ielt.checked === true) {
+						out+=' --'+inp;
+					} else {
+						out+=' --no-'+inp;
+					}
+					break;
+			}
+		}
+		// document.getElementById('pjt_parse_btn').parentNode.dispatchEvent(new Event('submit'));
+		document.getElementById('pjt_parse_btn').click();
+		out=document.getElementById('pjt_result').innerHTML+out;
+		document.getElementById('pjt_result').innerHTML=out;
+		
+		document.getElementById('bin__dummy_result').innerHTML=out;
+	}
+document.getElementById('bin__dummy').addEventListener('submit', function(e) {
+				e.preventDefault();
+				e.target.checkValidity();
+				bin__dummy_parse(e.target);
+				if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+					&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+					&& (window.location.port !== '80' && window.location.port !== '443')) {
+					fetch(window.location.protocol+'//' + window.location.hostname + ':' + window.location.port + '/form', {
+						method: 'POST',
+						body:document.getElementById('pjt_result').innerHTML.replace(/dummy /g, '')
+					})
+						.then(response => response.text())
+						.then(result => {
+							document.getElementById('bin__dummy_server_response').innerHTML = result;
+						})
+						.catch(error => {
+							document.getElementById('bin__dummy_server_response').innerHTML = error;
+						});
+				}
+			});
+</script></div>
+	<script>
+	document.getElementById("target").addEventListener("change", function() {
+		var val = this.value;
+		document.querySelectorAll(".subcmd-container-target").forEach(function(el) {
+			el.classList.add("d-none");
+		});
+		var subcmd = document.getElementById("target_"+val+"_container").classList.remove("d-none");
+	});
+	</script>
+</div>
+</div>
+<script type="text/javascript">
+	function pjt_parse(__form) { 
+		let pjt_frm = new FormData(__form);
+		let out = 'pjt';
+		for(const inp of pjt_frm.keys()) {
+			const ielt = document.getElementById(inp);
+			switch(ielt.getAttribute('pa-type')) {
+				case 'pos':
+					if (/[\s!@#$%^&*()_+=[\]{};':"\|,.<>/?]/.test(pjt_frm.get(inp))) {
+						out+=' "'+pjt_frm.get(inp)+'"';
+					} else {
+						out+=' '+pjt_frm.get(inp);
+					}
+					break;
+				case 'opt':
+					if(pjt_frm.get(inp) !== '') {
+						if (ielt.hasAttribute('pa-repeat')) {
+							for(const val of pjt_frm.get(inp).split(`
+`)) {
+								out+=' --'+inp+' "'+val+'"';
+							}
+						} else {
+							out+=' --'+inp+' "'+pjt_frm.get(inp)+'"';
+						}
+					}
+					break;
+				case 'flag':
+					if(ielt.checked === true) {
+						out+=' --'+inp;
+					} else {
+						out+=' --no-'+inp;
+					}
+					break;
+			}
+		}
+		document.getElementById('pjt_result').innerHTML=out;
+	}
+document.getElementById('pjt').addEventListener('submit', function(e) {
+				e.preventDefault();
+				e.target.checkValidity();
+				pjt_parse(e.target);
+				if ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+					&& (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+					&& (window.location.port !== '80' && window.location.port !== '443')) {
+					fetch(window.location.protocol+'//' + window.location.hostname + ':' + window.location.port + '/form', {
+						method: 'POST',
+						body:document.getElementById('_result').innerHTML.replace(/pjt /g, '')
+					})
+						.then(response => response.text())
+						.then(result => {
+							document.getElementById('pjt_server_response').innerHTML = result;
+						})
+						.catch(error => {
+							document.getElementById('pjt_server_response').innerHTML = error;
+						});
+				}
+			});
+</script>

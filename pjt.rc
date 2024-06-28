@@ -1,0 +1,2 @@
+alias pjt="/home/didi/worskpace/Code/pjt/pjt"
+[ -f "/home/didi/worskpace/Code/pjt/completely.bash" ] && source "/home/didi/worskpace/Code/pjt/completely.bash";

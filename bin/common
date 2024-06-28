@@ -1,0 +1,25 @@
+# Common functions
+get_config_dir() {
+  if [ "$1" != "" ]; then
+    echo "$1"
+  else 
+    local CONFIG_DIR
+    if [ -d "$HOME/.config" ]; then
+      CONFIG_DIR="$HOME/.config/pjt"
+    else
+      CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/pjt"
+    fi
+    echo "$CONFIG_DIR"
+  fi
+}
+
+get_config_path() {
+  echo "$(get_config_dir "$1")/config.yaml"
+}
+
+load_config() {
+  local CONFIG_PATH
+  CONFIG_PATH=$(get_config_path "$1")
+  [ -f "$CONFIG_PATH" ] || touch "$CONFIG_PATH"
+  yq eval '.' "$CONFIG_PATH"
+}

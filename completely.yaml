@@ -1,0 +1,47 @@
+pjt:
+- add
+- config
+- create
+- list
+- run
+- scan
+pjt add:
+- <directory>
+- --config-dir
+- --description
+pjt config:
+- add
+- remove
+- show
+pjt config add:
+- --ypath
+- -y
+- --config-dir
+- --array
+- --no-array
+pjt config remove:
+- --ypath
+- -y
+- --config-dir
+pjt config show:
+- --config-dir
+pjt create:
+- --init
+- -i
+- --config-dir
+- --parent
+
+pjt create*--config-dir:
+- <directory>
+pjt create*--parent:
+- <directory>
+pjt list:
+- --config-dir
+pjt run:
+- $(/home/didi/worskpace/Code/parseArger/bin/list)
+- --config-dir
+pjt scan:
+- --config-dir
+- --add-all
+- --no-add-all
+

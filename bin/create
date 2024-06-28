@@ -1,0 +1,286 @@
+#!/bin/bash
+# @parseArger-begin
+# @parseArger-help "Create a new project" --option "help" --short-option "h"
+# @parseArger-verbose --option "verbose" --level "0" --quiet-option "quiet"
+# @parseArger-declarations
+# @parseArger pos project-name "The name of the project to create"
+# @parseArger opt init "Initialization command or script" --short i --repeat
+# @parseArger opt config-dir "pjt config directory" --complete "directory"
+# @parseArger opt parent "parent directory" --complete "directory"
+# @parseArger opt description "description"
+# @parseArger-declarations-end
+
+# @parseArger-utils
+_helpHasBeenPrinted=1;
+_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)";
+# @parseArger-utils-end
+
+# @parseArger-parsing
+
+__cli_arg_count=$#;
+
+die()
+{
+	local _ret="${2:-1}"
+	test "${_PRINT_HELP:-no}" = yes && print_help >&2
+	log "$1" -3 >&2
+	exit "${_ret}"
+}
+
+
+begins_with_short_option()
+{
+	local first_option all_short_options=''
+	first_option="${1:0:1}"
+	test "$all_short_options" = "${all_short_options/$first_option/}" && return 1 || return 0
+}
+
+# POSITIONALS ARGUMENTS
+_positionals=();
+_optional_positionals=();
+_arg_project_name="";
+# OPTIONALS ARGUMENTS
+_arg_init=()
+_arg_config_dir=
+_arg_parent=
+_arg_description=
+# FLAGS
+# NESTED
+_verbose_level="0";
+
+
+
+print_help()
+{
+	_triggerSCHelp=1;
+
+	if [[ "$_helpHasBeenPrinted" == "1" ]]; then
+		_helpHasBeenPrinted=0;
+		echo -e "Create a new project:"
+	echo -e "	project-name: The name of the project to create"
+	echo -e "	-i, --init <init>: Initialization command or script, repeatable"
+	echo -e "	--config-dir <config-dir>: pjt config directory"
+	echo -e "	--parent <parent>: parent directory"
+	echo -e "	--description <description>: description"
+	echo -e "Usage :
+	$0 <project-name> [--init <value>] [--config-dir <value>] [--parent <value>] [--description <value>]";
+	fi
+
+}
+
+log() {
+	local _arg_msg="${1}";
+	local _arg_level="${2:-0}";
+	if [ "${_arg_level}" -le "${_verbose_level}" ]; then
+		case "$_arg_level" in
+			-3)
+				_arg_COLOR="\033[0;31m";
+				;;
+			-2)
+				_arg_COLOR="\033[0;33m";
+				;;
+			-1)
+				_arg_COLOR="\033[1;33m";
+				;;
+			1)
+				_arg_COLOR="\033[0;32m";
+				;;
+			2)
+				_arg_COLOR="\033[1;36m";
+				;;
+			3)
+				_arg_COLOR="\033[0;36m";
+				;;
+			*)
+				_arg_COLOR="\033[0m";
+				;;
+		esac
+		echo -e "${_arg_COLOR}${_arg_msg}\033[0m";
+	fi
+}
+
+parse_commandline()
+{
+	_positionals_count=0
+	while test $# -gt 0
+	do
+		_key="$1"
+		case "$_key" in
+			-i|--init)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_init+=("$2")
+				shift
+				;;
+			--init=*)
+				_arg_init+=("${_key##--init=}")
+				;;
+			-i*)
+				_arg_init+=("${_key##-i}")
+				;;
+			
+			--config-dir)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_config_dir="$2"
+				shift
+				;;
+			--config-dir=*)
+				_arg_config_dir="${_key##--config-dir=}"
+				;;
+			
+			--parent)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_parent="$2"
+				shift
+				;;
+			--parent=*)
+				_arg_parent="${_key##--parent=}"
+				;;
+			
+			--description)
+				test $# -lt 2 && die "Missing value for the option: '$_key'" 1
+				_arg_description="$2"
+				shift
+				;;
+			--description=*)
+				_arg_description="${_key##--description=}"
+				;;
+			
+			-h|--help)
+				print_help;
+				exit 0;
+				;;
+			-h*)
+				print_help;
+				exit 0;
+				;;
+			--verbose)
+					if [ $# -lt 2 ];then
+						_verbose_level="$((_verbose_level + 1))";
+					else
+						_verbose_level="$2";
+						shift;
+					fi
+					;;
+				--quiet)
+					if [ $# -lt 2 ];then
+						_verbose_level="$((_verbose_level - 1))";
+					else
+						_verbose_level="-$2";
+						shift;
+					fi
+					;;
+				
+				*)
+				_last_positional="$1"
+				_positionals+=("$_last_positional")
+				_positionals_count=$((_positionals_count + 1))
+				;;
+		esac
+		shift
+	done
+}
+
+
+handle_passed_args_count()
+{
+	local _required_args_string="project-name"
+	if [ "${_positionals_count}" -gt 1 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: There were spurious positional arguments --- we expect at most 1 (namely: $_required_args_string), but got ${_positionals_count} (the last one was: '${_last_positional}').\n\t${_positionals[*]}" 1
+	fi
+	if [ "${_positionals_count}" -lt 1 ] && [ "$_helpHasBeenPrinted" == "1" ];then
+		_PRINT_HELP=yes die "FATAL ERROR: Not enough positional arguments - we require at least 1 (namely: $_required_args_string), but got only ${_positionals_count}.
+	${_positionals[*]}" 1;
+	fi
+}
+
+
+assign_positional_args()
+{
+	local _positional_name _shift_for=$1;
+	_positional_names="_arg_project_name ";
+	shift "$_shift_for"
+	for _positional_name in ${_positional_names};do
+		test $# -gt 0 || break;
+		eval "if [ \"\$_one_of${_positional_name}\" != \"\" ];then [[ \"\${_one_of${_positional_name}[*]}\" =~ \"\${1}\" ]];fi" || die "${_positional_name} must be one of: $(eval "echo \"\${_one_of${_positional_name}[*]}\"")" 1;
+		eval "$_positional_name=\${1}" || die "Error during argument parsing, possibly an ParseArger bug." 1;
+		shift;
+	done
+}
+
+print_debug()
+{
+	print_help
+	# shellcheck disable=SC2145
+	echo "DEBUG: $0 $@";
+	
+	echo -e "	project-name: ${_arg_project_name}";
+	echo -e "	init: ${_arg_init[*]}";
+	echo -e "	config-dir: ${_arg_config_dir}";
+	echo -e "	parent: ${_arg_parent}";
+	echo -e "	description: ${_arg_description}";
+
+}
+
+
+on_interrupt() {
+	die Process aborted! 130;
+}
+
+
+parse_commandline "$@";
+handle_passed_args_count;
+assign_positional_args 1 "${_positionals[@]}";
+trap on_interrupt INT;
+
+
+
+# @parseArger-parsing-end
+# print_debug "$@"
+# @parseArger-end
+
+# Load common functions
+source "$(dirname "$0")/common"
+
+# Main logic for creating a project
+project_name=$_arg_project_name
+
+log "Creating project: $project_name" 1
+
+if [ "$_arg_parent" != "" ] && [ ! -d "$_arg_parent" ]; then
+	tmppar=$(yq eval ".workspaces.$_arg_parent" "$(get_config_path "$_arg_config_dir")");
+	if [ "$tmppar" = "" ]; then
+		die "Error: directory $_arg_parent or\n No workspace.$_arg_parent found."
+	fi
+	_arg_parent=$tmppar
+elif [ "$_arg_parent" = "" ]; then
+	_arg_parent=$(yq eval ".workspaces.default" "$(get_config_path "$_arg_config_dir")");
+fi
+
+cd "$_arg_parent" || exit 1
+project_path="$_arg_parent/$project_name"
+
+if [ "${#_arg_init[@]}" -gt 0 ]; then
+	# Execute initialization commands/scripts
+	for init_cmd in "${_arg_init[@]}"; do
+		log "Executing init command: $init_cmd" 1
+		cmd=("$init_cmd" "$project_name")
+		"${cmd[@]}"
+	done
+fi
+if [ ! -d "$project_path" ]; then
+	# Create project directory
+	mkdir -p "$project_path"
+fi
+# check if git is init, do if not
+if [ ! -d "$project_path/.git" ]; then
+	# use sub shell to avoid changing directory
+	(cd "$project_path" || exit 1; git init)
+fi
+
+addCmd=("$_SCRIPT_DIR/add" "$project_name" "$project_path" --description "$_arg_description")
+if [ "$_arg_config_dir" != "" ]; then
+	addCmd+=(--config-dir "$_arg_config_dir")
+fi
+"${addCmd[@]}"
+
+log "Project $project_name created successfully." 1
